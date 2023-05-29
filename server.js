@@ -82,6 +82,22 @@ app.post('/api/images', (req, res) => {
  });
 });
 
+
+// Sunucudan verileri getir
+app.get('/api/images', (req, res) => {
+    // Tüm verileri getir
+    Map.find({})
+      .then((data) => {
+        // Başarılı olduğunda verileri döndür
+        res.json(data);
+      })
+      .catch((err) => {
+        // Hata olduğunda 500 kodu ve hatayı döndür
+        res.status(500).json(err);
+      });
+  });
+
+  
 // Sunucuyu belirli bir portta dinlemeye başlat
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
