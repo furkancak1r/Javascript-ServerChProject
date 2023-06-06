@@ -103,6 +103,17 @@ app.post("/api_chproject/post/images", async (req, res) => {
     });
 });
 
+// GET endpoint to retrieve data without files
+app.get("/api_chproject/get/data", async (req, res) => {
+  try {
+    const data = await ImageModel.find({}, { fileBase64: 0 }); // Exclude the fileBase64 field
+
+    res.json(data);
+  } catch (error) {
+    console.error("Error retrieving data:", error);
+    res.status(500).json({ message: "Error retrieving data" });
+  }
+});
 app.listen(3000, () => {
   console.log("Server started on port 3000");
 });
