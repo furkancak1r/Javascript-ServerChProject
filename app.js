@@ -114,6 +114,33 @@ app.get("/api_chproject/get/data", async (req, res) => {
     res.status(500).json({ message: "Error retrieving data" });
   }
 });
+
+// GET endpoint to retrieve a file in base64 format
+app.get("/api_chproject/get/file/:fileName", async (req, res) => {
+  try {
+    // İstekten dosya adını alın
+    const fileName = req.params.fileName;
+
+    // Dosya adına göre veritabanında arama yapın
+    const doc = await ImageModel.findOne({ fileName: fileName });
+
+    // Eğer dosya bulunamazsa hata döndürün
+    if (!doc) {
+      res.status(404).json({ message: "Dosya bulunamadı." });
+      return;
+    }
+
+    // Dosyanın base64 formatını alın
+    const fileBase64 = doc.fileBase64;
+
+    // Cevap olarak base64 string'i gönderin
+    res.send(fileBase64);
+  } catch (error) {
+    console.error("Error retrieving file:", error);
+    res.status(500).json({ message: "Error retrieving file" });
+  }
+});
+
 app.listen(3000, () => {
   console.log("Server started on port 3000");
 });
