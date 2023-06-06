@@ -2,8 +2,12 @@ const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const mongodb = require("mongodb");
+const assert = require("assert");
+
 const path = require("path");
 const fs = require("fs");
+
 app.use(bodyParser.json({ limit: "500mb" }));
 app.use(
   bodyParser.urlencoded({
@@ -22,10 +26,10 @@ app.use(function (req, res, next) {
   next();
 });
 
-// MongoDB Connection
 const uri =
   "mongodb+srv://furkan:O6n9c2e7*@czmcluster.0h9u0ui.mongodb.net/ChProject_DB";
 const dbName = "ChProject_DB";
+
 mongoose.connect(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -62,14 +66,24 @@ app.post("/api_chproject/post/images", async (req, res) => {
 
   const fileBase64 = req.body.fileBase64;
   const fileName = req.body.fileName;
-  const filePath = path.join(__dirname, "files", fileName);
 
-   fs.writeFile(filePath, fileBase64, { encoding: 'base64' }, async (err) => {
-    if (err) {
-      console.error("Error saving file:", err);
-      res.status(500).json({ message: "Kaydetme hatası." });
-    } else {
-      console.log("File saved successfully");
+  const bucket = new mongodb.GridFSBucket(connection.db, {
+    bucketName: "images",
+  });
+
+  const uploadStream = bucket.openUploadStream(fileName);
+  const buffer = Buffer.from(fileBase64, "base64");
+
+  uploadStream.end(buffer);
+
+  uploadStream
+    .on("error", function (error) {
+      console.error("Error uploading file:", error);
+      res.status(500).json({ message: "Dosya yükleme hatası." });
+    })
+    .on("finish", async function () {
+      console.log("Dosya yüklendi!");
+      res.send("Dosya yüklendi!");
 
       const newImage = new ImageModel({
         fileName: req.body.fileName,
@@ -83,17 +97,10 @@ app.post("/api_chproject/post/images", async (req, res) => {
         fileBase64: req.body.fileBase64,
       });
 
-    /*  newImage.save((err) => {
-        if (err) {
-          console.error("Error saving image data:", err);
-          res.status(500).json({ message: "Kaydetme hatası." });
-        } else {
-          console.log("Image data saved successfully");
-          res.status(201).json({ message: "Dosya başarıyla yüklendi." });
-        }
-      });*/
-    }
-  });
+      await ImageModel.deleteMany({ fileName: fileName });
+
+      await newImage.save();
+    });
 });
 
 app.listen(3000, () => {
