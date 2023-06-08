@@ -23,12 +23,13 @@ app.use(function (req, res, next) {
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content-Type, Accept"
   );
+  res.header("Access-Control-Allow-Methods", "GET, POST, DELETE"); // Add DELETE method
   next();
 });
 
+
 const uri =
   "mongodb+srv://furkan:O6n9c2e7*@czmcluster.0h9u0ui.mongodb.net/ChProject_DB";
-const dbName = "ChProject_DB";
 
 mongoose.connect(uri, {
   useNewUrlParser: true,
@@ -140,6 +141,29 @@ app.get("/api_chproject/get/file/:fileName", async (req, res) => {
     res.status(500).json({ message: "Error retrieving file" });
   }
 });
+
+// DELETE endpoint to delete an image by fileName
+app.delete("/api_chproject/delete/image/:fileName", async (req, res) => {
+  try {
+    // İstekten dosya adını alın
+    const fileName = req.params.fileName;
+
+    // Dosyayı veritabanından silin
+    const result = await ImageModel.deleteOne({ fileName: fileName });
+
+    // Silme işlemi başarılıysa 200 OK yanıtı gönderin
+    if (result.deletedCount > 0) {
+      res.status(200).json({ message: "Dosya başarıyla silindi." });
+    } else {
+      // Dosya bulunamazsa 404 Not Found yanıtı gönderin
+      res.status(404).json({ message: "Dosya bulunamadı." });
+    }
+  } catch (error) {
+    console.error("Error deleting file:", error);
+    res.status(500).json({ message: "Dosya silme hatası." });
+  }
+});
+
 
 app.listen(3000, () => {
   console.log("Server started on port 3000");
